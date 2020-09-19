@@ -4,7 +4,8 @@ import cv2
 
 class FingerControl:
     def __init__(self, x0, y0, x1, y1, movements):
-        self.webcam = cv2.VideoCapture(0)
+        # self.webcam = cv2.VideoCapture(0)
+        self.skintonemap = False
         # Left hand region
         self.region = None
         # Skin color histogram
@@ -22,7 +23,7 @@ class FingerControl:
         self.x1 = x1
         self.y0 = y0
         self.y1 = y1
-        #movement
+        # movement
         self.movements = movements
 
     # Draw zone for capture player skin tone
@@ -53,7 +54,8 @@ class FingerControl:
         roi = np.zeros([90, 10, 3], dtype=hsv_frame.dtype)
 
         for i in range(self.rect):
-            roi[i * 10: i * 10 + 10, 0: 10] = hsv_frame[self.initRect_x[i]:self.initRect_x[i] + 10, self.initRect_y[i]:self.initRect_y[i] + 10]
+            roi[i * 10: i * 10 + 10, 0: 10] = hsv_frame[self.initRect_x[i]:self.initRect_x[i] + 10,
+                                              self.initRect_y[i]:self.initRect_y[i] + 10]
 
         hand_hist = cv2.calcHist([roi], [0, 1], None, [180, 256], [0, 180, 0, 256])
         return cv2.normalize(hand_hist, hand_hist, 0, 255, cv2.NORM_MINMAX)
@@ -105,7 +107,7 @@ class FingerControl:
             if dist_max_i < len(s):
                 farthest_defect = s[dist_max_i]
                 farthest_point = tuple(contour[farthest_defect][0])
-                #print("x:", np.argmax(cv2.subtract(x, cx)), " y:", np.argmax(cv2.subtract(y, cy)))
+                # print("x:", np.argmax(cv2.subtract(x, cx)), " y:", np.argmax(cv2.subtract(y, cy)))
 
                 return farthest_point
             else:
@@ -121,7 +123,7 @@ class FingerControl:
         try:
             max_cont = max(contour_list, key=cv2.contourArea)
         except Exception as e:
-            #print(e)
+            # print(e)
             max_cont = None
 
         cnt_centroid = self.centerPoint(max_cont)
@@ -133,20 +135,24 @@ class FingerControl:
                 defects = cv2.convexityDefects(max_cont, hull)
                 far_point = self.farthest_point(defects, max_cont, cnt_centroid)
                 cv2.circle(self.region, far_point, 5, [0, 0, 255], -1)
-                des = (far_point[0]-cnt_centroid[0],far_point[1]-cnt_centroid[1])
+                des = (far_point[0] - cnt_centroid[0], far_point[1] - cnt_centroid[1])
             except Exception as e:
-                #print(e)
-                des = (0,0)
-                far_point = (0,0)
+                # print(e)
+                des = (0, 0)
+                far_point = (0, 0)
 
-            if(des[0]<0 and des[1]<0):
+            if (des[0] < 0 and des[1] < 0):
                 print(self.movements["left"])
-            elif(des[0]>=0 and des[1]<0):
+                res = self.movements["left"]
+            elif (des[0] >= 0 and des[1] < 0):
                 print(self.movements["up"])
-            elif(des[0]>=0 and des[1]>=0):
+                res = self.movements["up"]
+            elif (des[0] >= 0 and des[1] >= 0):
                 print(self.movements["right"])
+                res = self.movements["right"]
             else:
                 print(self.movements["down"])
+                res = self.movements["down"]
 
             if len(self.marker) < 2:
                 self.marker.append(far_point)
@@ -155,7 +161,7 @@ class FingerControl:
                 self.marker.append(far_point)
 
             self.draw()
-
+            return res
         else:
             print("Hand not detected!")
 
@@ -181,7 +187,7 @@ class FingerControl:
                 self.skincolor_hist = self.skinColor()
 
             if skintonemap:
-                #print("good")
+                # print("good")
                 self.process()
 
             else:
@@ -195,6 +201,33 @@ class FingerControl:
         cv2.destroyAllWindows()
         self.webcam.release()
 
+    def startStream(self, frame, status):
+
+        res = None
+
+        frame = cv2.flip(frame, 1)
+
+        self.region = frame[self.x0:self.y0, self.x1:self.y1]
+        cv2.rectangle(frame, (self.x0, self.x1), (self.y0, self.y1), (0, 255, 0), 0)
+
+        if status and not self.skintonemap:
+            self.skintonemap = True
+            self.skincolor_hist = self.skinColor()
+
+        if self.skintonemap:
+            # print("good")
+            res = self.process()
+
+        else:
+            frame = self.initRect(frame)
+
+        cv2.imshow("test", frame)
+        cv2.waitKey(20)
+
+        return frame, res
+
+        # cv2.imshow("Original", frame)
+        # cv2.waitKey(20)
 
 # if __name__ == "__main__":
 #     app = FingerControl(300, 900, 300, 900)
