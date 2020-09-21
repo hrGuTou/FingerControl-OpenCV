@@ -15,11 +15,21 @@ movements = {
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yigeiwoligiao!'
 socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
+fingerControl = FingerControl(x0=100, y0=700, x1=100, y1=700, movements=movements)
+
 
 # @app.route('/')
 # @ cross_origin()
 # def site():
 #     return "HI"
+
+@socketio.on('connect')
+def connect():
+    print('Connected')
+
+@socketio.on('disconnect')
+def disconnect():
+    print('Disconnected')
 
 @socketio.on('frame')
 #@cross_origin()
@@ -28,30 +38,29 @@ def handler(payload):
     status = payload['status']
     width = payload['width']
     height = payload['height']
-    #print(width, " ", height)
+    #print(status)
 
     #fingerControl = FingerControl(x0=int(width*(5/32)), y0=int(height*(5/18)), x1=int(width*(15/32)), y1=int(height*(5/6)), movements=movements)
-    fingerControl = FingerControl(x0=100, y0=700, x1=100, y1=700, movements=movements)
     try:
         img = base64.b64decode(b64)
         img = np.array(list(img))
         img_array = np.array(img, dtype=np.uint8)
         frame = cv2.imdecode(img_array, 1)
-        #print(frame)
-        #cv2.imshow("test", frame)
+        #cv2.imshow("original", frame)
         #cv2.waitKey(20)
 
         imout, res = fingerControl.startStream(frame, status)
-
-        #cv2.imshow("test", imout)
-#
+    #
+        #cv2.imshow("imout", imout)
+        #cv2.waitKey(20)
+    #
         retval, buf = cv2.imencode('.jpg', imout)
         b64out = base64.b64encode(buf)
         payload = {}
         payload['b64'] = b64out.decode('utf-8')
         payload['res'] = res
         payload['status'] = status
-        print(payload)
+        print(payload['res'])
         emit('response', payload)
 
 

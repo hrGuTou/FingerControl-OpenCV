@@ -4,7 +4,7 @@ import cv2
 
 class FingerControl:
     def __init__(self, x0, y0, x1, y1, movements):
-        # self.webcam = cv2.VideoCapture(0)
+        #self.webcam = cv2.VideoCapture(0)
         self.skintonemap = False
         # Left hand region
         self.region = None
@@ -142,16 +142,16 @@ class FingerControl:
                 far_point = (0, 0)
 
             if (des[0] < 0 and des[1] < 0):
-                print(self.movements["left"])
+                #print(self.movements["left"])
                 res = self.movements["left"]
             elif (des[0] >= 0 and des[1] < 0):
-                print(self.movements["up"])
+                #print(self.movements["up"])
                 res = self.movements["up"]
             elif (des[0] >= 0 and des[1] >= 0):
-                print(self.movements["right"])
+                #print(self.movements["right"])
                 res = self.movements["right"]
             else:
-                print(self.movements["down"])
+                #print(self.movements["down"])
                 res = self.movements["down"]
 
             if len(self.marker) < 2:
@@ -161,9 +161,11 @@ class FingerControl:
                 self.marker.append(far_point)
 
             self.draw()
-            return res
+
         else:
-            print("Hand not detected!")
+            #print("Hand not detected!")
+            res = "Hand not detected!"
+        return res
 
     # Draw debug points
     def draw(self):
@@ -213,16 +215,18 @@ class FingerControl:
         if status and not self.skintonemap:
             self.skintonemap = True
             self.skincolor_hist = self.skinColor()
+            #print("in")
 
         if self.skintonemap:
             # print("good")
             res = self.process()
+            print("processing")
 
         else:
             frame = self.initRect(frame)
 
-        cv2.imshow("test", frame)
-        cv2.waitKey(20)
+        #cv2.imshow("test", frame)
+        #cv2.waitKey(20)
 
         return frame, res
 
